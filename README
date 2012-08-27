@@ -1,0 +1,7 @@
+Sudoku Solver
+By Vernon Swanepoel
+
+This is a bit of a hack I've been playing with for some time.
+
+The program solves simple sudoku puzzles fine, but I'm trying
+to implement a guess system to try to crack harder ones.

@@ -11,7 +11,7 @@ void fill_struct(char *working);
 int workonblock(int p, int workwhat);
 void seta(int v, int p);
 void help();
-
+int guess(int n);
 int main(int argc, char **argv)
 {
   int i, k=0;
@@ -28,6 +28,7 @@ int main(int argc, char **argv)
     return 0;
   /* try to solve it */
   if(!solveit(origp, n[0])){
+    guess(n[0]);
     printf("\nNot solved\n");
   }
   return 0;
@@ -59,7 +60,7 @@ int solveit(char *working, int nz)
       rounds++;
       for(i = tmp = 0; i < PZSZ; i++){
 	test = tmp;
-	if(sa[i].val == '0'){
+	if(sa[i].val == BASEVAL){
 	  /* work on it */
 	  tmp += workonblock(i, workfirst);
 	  if(test < tmp){
@@ -78,7 +79,7 @@ int solveit(char *working, int nz)
       rounds++;
       for(i = tmp = 0; i < PZSZ; i++){
 	test = tmp;
-	if(sa[i].val == '0'){
+	if(sa[i].val == BASEVAL){
 	  /* work on it */
 	  tmp += workonblock(i, worksecond);
 	  if(test < tmp){
@@ -194,7 +195,7 @@ int workonblock(int p, int workwhat)
   /* fill the possible values for the square we're working on */
   for(i = 0; i < LENG; i++){
     if((*sp).posval[i] != -1)
-      (*sp).posval[i] = i + '0';
+      (*sp).posval[i] = i + BASEVAL;
   }
   /* ********************* FIRST LEVEL *********************** */
   if(!workwhat){
@@ -203,20 +204,20 @@ int workonblock(int p, int workwhat)
       /* check if the value is in the square */
       for(ic = 0; ic < 8; ic++){
 	elv = &sa[ins[ic]];
-        if((*elv).val == (i + '0')){
+        if((*elv).val == (i + BASEVAL)){
 	  (*sp).posval[i] = -1;
 	}
       }
       /* check if the value is in the lines */
       for(ic = 0; ic < 8; ic++){
 	elv = &sa[inh[ic]];
-	if((*elv).val == (i + '0')){
+	if((*elv).val == (i + BASEVAL)){
 	  (*sp).posval[i] = -1;
 	}
       }
       for(ic = 0; ic < 8; ic++){
 	elv = &sa[inv[ic]];
-	if((*elv).val == (i + '0')){
+	if((*elv).val == (i + BASEVAL)){
 	  (*sp).posval[i] = -1;
 	}
       }
@@ -243,7 +244,7 @@ int workonblock(int p, int workwhat)
     sh1v1 = sh1v = sh1v2 = shv1 = shv2 = sh2v1 = sh2v = sh2v2 = 0;
     for(i = 0; i < 8; i++){
       ts = &sa[ins[i]];
-      if((*ts).val != '0'){
+      if((*ts).val != BASEVAL){
 	if(((*ts).hl == hv1) && ((*ts).vl == vv1))
 	  sh1v1++;
 	else if(((*ts).hl == hv1) && ((*ts).vl == vv))
@@ -265,7 +266,7 @@ int workonblock(int p, int workwhat)
       }
     }
     for(i = 1; i < LENG; i++){
-      holdvalue = ('0' + i);
+      holdvalue = (BASEVAL + i);
       good = 0;
       /* see if the value is already in the square */
       for(ii = 0; ii < 8; ii++){
@@ -327,10 +328,10 @@ void fill_struct(char *working)
   for(i = 0; i < PZSZ; i++){
     sa[i].val = working[i];
     /* if val is still zero, fill the possible values */
-    if(sa[i].val == '0'){
+    if(sa[i].val == BASEVAL){
       sa[i].posval[0] == -1;
       for(ii = 1; ii < LENG; ii++){
-	sa[i].posval[ii] = '0' + ii;
+	sa[i].posval[ii] = BASEVAL + ii;
       }
     }
     sa[i].hl = i/9;
@@ -367,7 +368,7 @@ int vld_puzzle(char *given)
   for(i = 0; i < PZSZ; i++){
     /* allow underscore as input */
     if(given[i] == '_'){
-      given[i] = '0';
+      given[i] = BASEVAL;
     }
     /* check if the given arg is for help */
     if(!isdigit(given[i])){
@@ -389,7 +390,7 @@ int vld_puzzle(char *given)
   /* check that there are not too many of each number value */
   if(k == 0){
     for(i = 0; i < PZSZ; i++)
-      n[(given[i] - '0')]++;
+      n[(given[i] - BASEVAL)]++;
     for(i = 0; i < LENG; i++){
       if(i && n[i] > 9){
 	printf("Too many %ds\n", i);
@@ -398,7 +399,6 @@ int vld_puzzle(char *given)
       }
     }
   }
-
   /* copy the given puzzle vals into the working puzzle */
   strcpy(origp, given);
   return k;
@@ -408,4 +408,57 @@ int vld_puzzle(char *given)
 void help()
 {
   printf("Print the help\n");
+}
+
+int guess(int n)
+{
+  /* right now it just works with one guess
+     what it needs to do is make a whole array of
+     possible guesses.  Then we set a holding array
+     to the old value, and do guessing for each possible 
+     guess value, resetting the origional array after each unsuccessful
+     guess, and moving on to the next one until
+     we either go through the whole guessing array
+     or we fill the puzzle.
+
+    potentially we could go on to doing two or more guesses
+    at the same time.  We could carry on guessing until we've practically
+    filled the whole puzzle.
+  */
+  char guessp[PZSZ];
+  int p, i, count, lowest, lp, hold;
+  lowest = 8;
+  for(p = 0; p < PZSZ; p++){
+    count = 0;
+    if(sa[p].val == BASEVAL){
+      for(i = 1; i < LENG; i++){
+	if(sa[p].posval[i] != -1){
+	  count++;
+	}
+      }
+      if(count < lowest){
+	lowest = count;
+	lp = p;
+      }
+    }
+  }
+  printf("The lowest was %d at %d\n", lowest, lp);
+  for(p = hold = 0; p < PZSZ; p++){
+    if(p == lp){
+      for(i = 1; i < LENG; i++){
+	/* find the first val it could be */
+	if(sa[p].posval[i] != -1){
+	  guessp[p] = sa[p].posval[i];
+	  break;
+	}
+      }
+    }
+    else{
+      guessp[p] = slvpz[p];
+    }
+  }
+  if(!solveit(guessp, --n)){
+    printf("Not solved with a guess");
+  }
+  return lp;
 }

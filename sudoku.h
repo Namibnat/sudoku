@@ -7,3 +7,4 @@
 #define NOTCHANGED 0               /* no change in workonblock */
 #define GOTVAL 1
 #define MISSEDVAL 0
+#define BASEVAL '0'
